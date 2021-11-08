@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,7 +54,7 @@ public class OperacaoService {
 
     private Optional<Conta> verificarConta;
 
-    public void sacar(OperacaoBancaria dadosOperacaoBancaria) throws ExecutionException, InterruptedException, JsonProcessingException {
+    public List<Map.Entry<String,String>> sacar(OperacaoBancaria dadosOperacaoBancaria){
 
         dadosOperacaoBancaria.setNumeroDaConta(dadosOperacaoBancaria.getNumeroDaConta());
         dadosOperacaoBancaria.setNumeroDaContaDestino(dadosOperacaoBancaria.getNumeroDaConta());
@@ -70,6 +71,8 @@ public class OperacaoService {
             var valorDeSaque = dadosOperacaoBancaria.getValorDeTransacao().doubleValue();
             var valorSaldo = conta.getSaldo().doubleValue();
 
+            String alerta = "";
+
             if (valorDeSaque + 10 <= valorSaldo && valorDeSaque > 0) {
 
                 Evento evento = modelMapper.map(conta, Evento.class);
@@ -84,33 +87,51 @@ public class OperacaoService {
                 var tipoConta = conta.getTipoDaConta();
                 var numConta = conta.getNumeroDaConta();
 
+                var buscarQuantidadeSaque = retornarQuantiSaques(numConta);
+                var quantidadeSaque = buscarQuantidadeSaque.getQuantidadeSaque();
+
                 if (tipoConta == ETipoDeConta.PESSOA_FISICA || tipoConta == ETipoDeConta.PESSOA_JURIDICA){
-                    var quantidadeSaque = retornarQuantiSaques(numConta);
-                    if(quantidadeSaque.getQuantidadeSaque() > 0){
+
+                    if(quantidadeSaque > 0){
                         var novoValorSaldo = valorSaldo - valorDeSaque ;
                         conta.setSaldo(BigDecimal.valueOf(novoValorSaldo));
 
+                        alerta = String.format("Você ainda possui %d saques gratuitos", quantidadeSaque);
+
                     } else {
-                        var taxa = 10;
+                        var taxa = 10.0;
                         var novoValorSaldo = valorSaldo - (valorDeSaque + taxa);
                         conta.setSaldo(BigDecimal.valueOf(novoValorSaldo));
                         dadosOperacaoBancaria.setTaxa(taxa);
-                    }
+
+                        alerta = "Atingido limite de saques gratuitos, será cobrado uma taxa de" + String.format("R$%.2f", taxa);                    }
                 } else if (tipoConta == ETipoDeConta.GOVERNAMENTAL){
-                    var quantidadeSaque = retornarQuantiSaques(numConta);
-                    if(quantidadeSaque.getQuantidadeSaque() > 0){
+                    if(quantidadeSaque > 0){
                         var novoValorSaldo = valorSaldo - valorDeSaque ;
                         conta.setSaldo(BigDecimal.valueOf(novoValorSaldo));
+
+                        alerta = String.format("Você ainda possui %d saques gratuitos", quantidadeSaque);
                     } else {
-                        var taxa = 20;
+                        var taxa = 20.0;
                         var novoValorSaldo = valorSaldo - (valorDeSaque + taxa);
                         conta.setSaldo(BigDecimal.valueOf(novoValorSaldo));
                         dadosOperacaoBancaria.setTaxa(taxa);
+
+                        alerta = "Atingido limite de saques gratuitos, será cobrado uma taxa de" + String.format("R$%.2f", taxa);
                     }
                 }
 
                 contaRepository.save(conta);
                 operacaoBancariaRepository.save(dadosOperacaoBancaria);
+
+                var mensagem = Map.entry("mensagem", "Saque efetuado com sucesso");
+                var aviso = Map.entry("aviso", alerta);
+
+                List<Map.Entry<String,String>> msg = new ArrayList<>();
+                msg.add(mensagem);
+                msg.add(aviso);
+
+                return msg;
             } else {
                 throw new SaldoInsuficienteException("Transação não autorizado, saldo insuficiente!");
             }

@@ -25,6 +25,7 @@ public class Conta {
 
     private Long digitoVerificador;
 
+    @Enumerated(EnumType.STRING)
     private ETipoDeConta tipoDaConta;
 
     private BigDecimal saldo;

@@ -21,6 +21,5 @@ public class OperacaoBancariaDto {
     @NotNull(message = "É necessario um valor para realizar a operação")
     private BigDecimal valorDeTransacao;
 
-    @Enumerated(EnumType.STRING)
     private EOperacao tipoOperacao;
 }

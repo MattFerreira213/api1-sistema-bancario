@@ -29,7 +29,6 @@ public class ContaDto {
 
     @NotNull
     @Column(name = "tipo_da_conta")
-    @Enumerated(EnumType.STRING)
     private ETipoDeConta tipoDaConta;
 
     @NotNull(message = "Campo saldo deve ser informado.")

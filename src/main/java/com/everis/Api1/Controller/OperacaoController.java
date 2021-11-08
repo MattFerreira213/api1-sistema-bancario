@@ -25,11 +25,10 @@ public class OperacaoController {
     private ContaRepository contaRepository;
 
     @PostMapping("/conta/sacar")
-    public ResponseEntity<?> sacar(@RequestBody @Valid OperacaoBancariaDto operacaoBancariaDto) throws ExecutionException, InterruptedException, JsonProcessingException {
+    public ResponseEntity<?> sacar(@RequestBody @Valid OperacaoBancariaDto operacaoBancariaDto) {
         OperacaoBancaria operacaoBancaria = new OperacaoBancaria();
         BeanUtils.copyProperties(operacaoBancariaDto, operacaoBancaria);
-        operacaoService.sacar(operacaoBancaria);
-        var mensagem = Map.entry("mensagem", "Saque efetuado com sucesso");
+        var mensagem = operacaoService.sacar(operacaoBancaria);
         return ResponseEntity.status(HttpStatus.CREATED).body(mensagem);
     }
 
