@@ -18,6 +18,11 @@ public class ClienteService {
 
     private static Optional<Cliente> verificarExistenciaDoCliente;
 
+    public ClienteService(@Autowired ClienteRepository clienteRepository){
+        this.clienteRepository = clienteRepository;
+    }
+
+
     public void cadastrarCliente(Cliente dadosCliente) {
 
         dadosCliente.setNome(dadosCliente.getNome());
